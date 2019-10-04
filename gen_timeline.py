@@ -26,11 +26,7 @@ def get_msg(**payload):
     if 'user' in data:
         text = data['text']
         user = data['user']
-        print(chinfo[msgch])
-        if chinfo[msgch] == user:
-            # usericon = webclient.users_profile_get(
-            #     token=usertoken,
-            #     user=user)['profile']['image_512']
+        if chinfo[msgch] == user and msgch in ch:
             username = web_client.users_info(
                 token=slack_token,
                 user=user)['user']['profile']['display_name']
@@ -53,14 +49,13 @@ def get_msg(**payload):
                     str(username) + "*\n" + str(text) + \
                     '"}},{"type":"divider"},{"type": "context","elements": [{"type": "mrkdwn", "text": "#' + str(msgchname) + '  ' + str(
                         msgdate) + '"}]}]'
-            if msgch in ch:
-                web_client.chat_postMessage(
-                    token=os.getenv('SlackBtoken'),
-                    channel="#times_all_tl",
-                    unfurl_media=True,
-                    unfurl_links=True,
-                    blocks=block
-                )
+            web_client.chat_postMessage(
+                token=os.getenv('SlackBtoken'),
+                channel="#times_all_tl",
+                unfurl_media=True,
+                unfurl_links=True,
+                blocks=block
+            )
 
 
 slack_token = os.getenv('SlackBtoken')
