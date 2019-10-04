@@ -2,8 +2,12 @@ from slack import RTMClient, WebClient
 import csv
 import os
 import datetime
+
+
 usertoken = os.getenv('SlackUtoken')
+slack_token = os.getenv('SlackBtoken')
 webclient = WebClient(token=usertoken)
+rtm_client = RTMClient(token=slack_token)
 
 
 def get_chlist():
@@ -58,6 +62,4 @@ def get_msg(**payload):
             )
 
 
-slack_token = os.getenv('SlackBtoken')
-rtm_client = RTMClient(token=slack_token)
 rtm_client.start()
