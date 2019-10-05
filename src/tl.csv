@@ -1,0 +1,2 @@
+id,name,is_channel,created,is_archived,is_general,unlinked,creator,name_normalized,is_shared,is_org_shared,is_member,is_private,is_mpim,members,topic,purpose,previous_names,num_members
+CNQE3FTG9,times_all_tl,True,1569892493,False,False,0,UNUMA6T8V,times_all_tl,False,False,True,False,False,"['UNGJLSU74', 'UNUMA6T8V']","{'value': '', 'creator': '', 'last_set': 0}","{'value': '', 'creator': '', 'last_set': 0}",[],2
