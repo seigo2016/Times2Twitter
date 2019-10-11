@@ -21,17 +21,11 @@ def get_chlist():
     return chlist, chinfo
 
 
-def build_message(flg, username, text, imgurlpub, msgchname, msgdate):
-    if flg == 0:
-        block = '[{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"*' + str(username) + '* \n' + str(text) + '"},"accessory":{"type":"image","image_url":"' + \
-            str(imgurlpub) + \
-            '","alt_text":"Image"}},{"type":"divider"},{"type": "context","elements": [{"type": "mrkdwn", "text": "#' + str(msgchname) + '  ' + str(
-            msgdate) + '"}]}]'
-    elif flg == 1:
-        block = '[{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"*' + \
-            str(username) + "*\n" + str(text) + \
-            '"}},{"type":"divider"},{"type": "context","elements": [{"type": "mrkdwn", "text": "#' + str(msgchname) + '  ' + str(
-                msgdate) + '"}]}]'
+def build_message(username, text, imgurlpub, msgchname, msgdate):
+    block = '[{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"*' + str(username) + '* \n' + str(text) + '"},"accessory":{"type":"image","image_url":"' + \
+        str(imgurlpub) + \
+        '","alt_text":"Image"}},{"type":"divider"},{"type": "context","elements": [{"type": "mrkdwn", "text": "#' + str(msgchname) + '  ' + str(
+        msgdate) + '"}]}]'
     return block
 
 
@@ -48,6 +42,9 @@ def get_msg(**payload):
             username = web_client.users_info(
                 token=slack_token,
                 user=user)['user']['profile']['display_name']
+            iconurl = web_client.users_info(
+                token=slack_token,
+                user=user)['user']['profile']['image_512']
             msgchname = web_client.channels_info(token=slack_token, channel=msgch)[
                 'channel']['name']
             msgdate = datetime.date.fromtimestamp(int(float(data['ts'])))
@@ -58,10 +55,11 @@ def get_msg(**payload):
                 imgsec = imgurl['file']['permalink_public'].split('-')[3]
                 imgurlpub = imgurl['file']['url_private'] + \
                     "?pub_secret=" + imgsec
-                block = build_message(0, username, text, imgurlpub)
+                block = build_message(
+                    username, text, iconurl, msgchname, msgdate)
             else:
                 block = build_message(
-                    1, username, text, None, msgchname, msgdate)
+                    username, text, iconurl, msgchname, msgdate)
             web_client.chat_postMessage(
                 token=os.getenv('SlackBtoken'),
                 channel="#times_all_tl",
