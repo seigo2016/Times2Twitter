@@ -31,42 +31,49 @@ def build_message(username, text, imgurlpub, msgchname, msgdate):
 
 @RTMClient.run_on(event="message")
 def get_msg(**payload):
-    ch, chinfo = get_chlist()
-    data = payload['data']
-    web_client = payload['web_client']
-    msgch = data['channel']
-    if 'user' in data:
-        text = data['text']
-        user = data['user']
-        if chinfo[msgch] == user and msgch in ch:
-            username = web_client.users_info(
-                token=slack_token,
-                user=user)['user']['profile']['display_name']
-            iconurl = web_client.users_info(
-                token=slack_token,
-                user=user)['user']['profile']['image_512']
-            msgchname = web_client.channels_info(token=slack_token, channel=msgch)[
-                'channel']['name']
-            msgdate = datetime.date.fromtimestamp(int(float(data['ts'])))
-            if 'files' in data:
-                imgurl = webclient.files_sharedPublicURL(
-                    token=usertoken,
-                    file=data['files'][0]['id'])
-                imgsec = imgurl['file']['permalink_public'].split('-')[3]
-                imgurlpub = imgurl['file']['url_private'] + \
-                    "?pub_secret=" + imgsec
+    try:
+        ch, chinfo = get_chlist()
+        data = payload['data']
+        web_client = payload['web_client']
+        msgch = data['channel']
+        if 'user' in data:
+            text = data['text']
+            user = data['user']
+            if chinfo[msgch] == user and msgch in ch:
+                username = web_client.users_info(
+                    token=slack_token,
+                    user=user)['user']['profile']['display_name']
+                iconurl = web_client.users_info(
+                    token=slack_token,
+                    user=user)['user']['profile']['image_512']
+                msgchname = web_client.channels_info(token=slack_token, channel=msgch)[
+                    'channel']['name']
+                msgdate = datetime.date.fromtimestamp(int(float(data['ts'])))
+                # if 'files' in data:
+                # imgurl = webclient.files_sharedPublicURL(
+                #     token=usertoken,
+                #     file=data['files'][0]['id'])
+                # imgsec = imgurl['file']['permalink_public'].split('-')[3]
+                # imgurlpub = imgurl['file']['url_private'] + \
+                #     "?pub_secret=" + imgsec
+                # block = build_message(
+                #     username, text, iconurl, msgchname, msgdate)
+                # else:
                 block = build_message(
                     username, text, iconurl, msgchname, msgdate)
-            else:
-                block = build_message(
-                    username, text, iconurl, msgchname, msgdate)
-            web_client.chat_postMessage(
-                token=os.getenv('SlackBtoken'),
-                channel="#times_all_tl",
-                unfurl_media=True,
-                unfurl_links=True,
-                blocks=block
-            )
+                web_client.chat_postMessage(
+                    token=os.getenv('SlackBtoken'),
+                    channel="#times_all_tl",
+                    unfurl_media=True,
+                    unfurl_links=True,
+                    blocks=block
+                )
+        if '!leave' in data['text']:
+            body = data['text'].split(":")[1]
+            print(body)
+    except Exception as e:
+        print(e)
+        pass
 
 
 rtm_client.start()
