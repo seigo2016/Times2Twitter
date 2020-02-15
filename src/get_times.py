@@ -13,7 +13,6 @@ chlist = []
 
 def channel_list(client):
     channels = client.channels_list(token=slack_token)
-    print(channels)
     if channels['ok']:
         return channels['channels']
     else:

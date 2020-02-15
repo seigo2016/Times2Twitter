@@ -4,6 +4,7 @@ import os
 import datetime
 import configparser
 from slackeventsapi import SlackEventAdapter
+import re
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config = configparser.ConfigParser()
@@ -11,6 +12,7 @@ config.read(current_dir+'/token.ini')
 slack_token = config.get("token", 'SlackBtoken')
 web_client = WebClient(token=slack_token)
 rtm_client = RTMClient(token=slack_token)
+p = re.compile(r'^!leave$')
 def get_chlist():
     chlist = []
     chinfo = {}
@@ -41,14 +43,15 @@ def get_msg(**payload):
             user = data['user']
             text = data['text']
             if chinfo[msgch] == user and msgch in ch:
+                if p.match(text):
+                    print(text)
                 username = web_client.users_info(
                     token=slack_token,
                     user=user)['user']['profile']['display_name']
                 iconurl = web_client.users_info(
                     token=slack_token,
                     user=user)['user']['profile']['image_512']
-                msgchname = web_client.channels_info(token=slack_token, channel=msgch)[
-                    'channel']['name']
+                msgchname = web_client.channels_info(token=slack_token, channel=msgch)['channel']['name']
                 msgdate = datetime.date.fromtimestamp(int(float(data['ts'])))
                 block = build_message(
                     username, text, iconurl, msgchname, msgdate)
@@ -94,5 +97,6 @@ def app_invited(**payload):
         writer.writeheader()
         writer.writerow(tlch)
 
+def app_leave():
 
 rtm_client.start()
