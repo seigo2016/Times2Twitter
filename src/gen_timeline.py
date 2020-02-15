@@ -8,11 +8,11 @@ import re
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config = configparser.ConfigParser()
-config.read(current_dir+'/token.ini')
+config.read(current_dir+'/dev_token.ini')
 slack_token = config.get("token", 'SlackBtoken')
 web_client = WebClient(token=slack_token)
 rtm_client = RTMClient(token=slack_token)
-p = re.compile(r'^!leave$')
+p = re.compile(r'^!disable$')
 def get_chlist():
     chlist = []
     chinfo = {}
@@ -32,6 +32,9 @@ def build_message(username, text, imgurlpub, msgchname, msgdate):
     return block
 
 
+def disable_app(msgch):
+    pass
+
 @RTMClient.run_on(event="message")
 def get_msg(**payload):
     try:
@@ -44,24 +47,25 @@ def get_msg(**payload):
             text = data['text']
             if chinfo[msgch] == user and msgch in ch:
                 if p.match(text):
-                    print(text)
-                username = web_client.users_info(
-                    token=slack_token,
-                    user=user)['user']['profile']['display_name']
-                iconurl = web_client.users_info(
-                    token=slack_token,
-                    user=user)['user']['profile']['image_512']
-                msgchname = web_client.channels_info(token=slack_token, channel=msgch)['channel']['name']
-                msgdate = datetime.date.fromtimestamp(int(float(data['ts'])))
-                block = build_message(
-                    username, text, iconurl, msgchname, msgdate)
-                web_client.chat_postMessage(
-                    token=slack_token,
-                    channel="#times_all_tl",
-                    unfurl_media=True,
-                    unfurl_links=True,
-                    blocks=block
-                )
+                    disable_app(msgch)
+                else:
+                    username = web_client.users_info(
+                        token=slack_token,
+                        user=user)['user']['profile']['display_name']
+                    iconurl = web_client.users_info(
+                        token=slack_token,
+                        user=user)['user']['profile']['image_512']
+                    msgchname = web_client.channels_info(token=slack_token, channel=msgch)['channel']['name']
+                    msgdate = datetime.date.fromtimestamp(int(float(data['ts'])))
+                    block = build_message(
+                        username, text, iconurl, msgchname, msgdate)
+                    web_client.chat_postMessage(
+                        token=slack_token,
+                        channel="#times_all_tl",
+                        unfurl_media=True,
+                        unfurl_links=True,
+                        blocks=block
+                    )
     except Exception as e:
         print(e)
 
@@ -96,7 +100,5 @@ def app_invited(**payload):
         "pending_connected_team_ids", "is_ext_shared", "is_group", "pending_shared", "is_pending_ext_shared", "shared_team_ids", "parent_conversation", "is_im"])
         writer.writeheader()
         writer.writerow(tlch)
-
-def app_leave():
 
 rtm_client.start()
