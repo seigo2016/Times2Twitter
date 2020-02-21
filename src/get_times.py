@@ -2,7 +2,7 @@ from slack import WebClient, RTMClient
 import csv
 import os
 import configparser
-# current_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = os.path.dirname(os.path.abspath(__file__))
 # config = configparser.ConfigParser()
 # config.read(current_dir+'/dev_token.ini')
 slack_token = os.getenv('SlackBtoken')
