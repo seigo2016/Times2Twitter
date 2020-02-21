@@ -6,5 +6,5 @@ while True:
     proc.wait()
     cmd = "python ./gen_timeline.py"
     proc2 = Popen(cmd.strip().split(" "))
-    time.sleep(3600)
+    time.sleep(1200)
     proc2.terminate()

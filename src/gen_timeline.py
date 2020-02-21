@@ -6,13 +6,14 @@ import configparser
 from slackeventsapi import SlackEventAdapter
 import re
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-config = configparser.ConfigParser()
-config.read(current_dir+'/dev_token.ini')
-slack_token = config.get("token", 'SlackBtoken')
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# config = configparser.ConfigParser()
+# config.read(current_dir+'/dev_token.ini')
+slack_token = os.getenv('SlackBtoken')
 web_client = WebClient(token=slack_token)
 rtm_client = RTMClient(token=slack_token)
-p = re.compile(r'^!disable$')
+disp = re.compile(r'^!disable$')
+mention_pattern = re.compile(r'(<@\w{9}>|<!here>|<!channel>)')
 def get_chlist():
     chlist = []
     chinfo = {}
@@ -45,8 +46,9 @@ def get_msg(**payload):
         if 'user' in data and 'thread_ts' not in data:
             user = data['user']
             text = data['text']
-            if chinfo[msgch] == user and msgch in ch:
-                if p.match(text):
+            text = re.sub(mention_pattern, '', text)
+            if chinfo[msgch] == user and msgch in ch and len(text):
+                if disp.match(text):
                     disable_app(msgch)
                 else:
                     username = web_client.users_info(
