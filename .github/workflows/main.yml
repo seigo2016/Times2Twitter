@@ -16,4 +16,7 @@ jobs:
           username: ${{ secrets.HOST_USER }}
           privateKey: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.HOST_PORT }}
-          command: cd ${{ secrets.dir }} && git pull origin master && docker build -t t2t:1.5 . --force-rm=true --no-cache && docker stop t2t && docker rm t2t && docker run -d -it --env  SlackBtoken=${{ secrets.Bot_Token }} --name t2t t2t:1.5
+          command: cd ${{ secrets.dir }} && git pull origin master && 
+                   docker build -t t2t:1.5 . --force-rm=true --no-cache && 
+                   docker ps -a | grep 't2t'| awk 'END{if(NR>=1){print $1}}' | xargs -r docker rm -f 
+                   && docker run -d -it --env  SlackBtoken=${{ secrets.Bot_Token }} --name t2t t2t:1.5
