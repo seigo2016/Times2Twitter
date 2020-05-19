@@ -3,64 +3,67 @@ import csv
 import os
 import datetime
 import configparser
-from slackeventsapi import SlackEventAdapter
 import re
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# config = configparser.ConfigParser()
-# config.read(current_dir+'/dev_token.ini')
 slack_token = os.getenv('SlackBtoken')
 web_client = WebClient(token=slack_token)
 rtm_client = RTMClient(token=slack_token)
-disp = re.compile(r'^!disable$')
-mention_pattern = re.compile(r'(<@\w{9}>|<!here>|<!channel>)')
-def get_chlist():
-    chlist = []
-    chinfo = {}
-    with open(current_dir+"/channel.csv", "r") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            chlist.append(row['id'])
-            chinfo[row['id']] = row['creator']
-    return chlist, chinfo
+# disp = re.compile(r'^!disable$')
+mention_pattern = re.compile(r'(<@\w+>|<!here>|<!channel>|<!everyone>)')
 
-
-def build_message(username, text, imgurlpub, msgchname, msgdate):
-    block = '[{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"*' + str(username) + '* \n' + str(text) + '"},"accessory":{"type":"image","image_url":"' + \
-        str(imgurlpub) + \
-        '","alt_text":"Image"}},{"type":"divider"},{"type": "context","elements": [{"type": "mrkdwn", "text": "#' + str(msgchname) + '  ' + str(
-        msgdate) + '"}]}]'
+def build_message(send_data):
+    user_name = send_data['user_name']
+    text = send_data['text']
+    icon_url = send_data['icon_url']
+    message_channel_name = send_data['message_channel_name']
+    message_send_date = send_data['message_send_date']
+    block = '[{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"*' + str(user_name) + '* \n' + str(text) + '"},"accessory":{"type":"image","image_url":"' + \
+        str(icon_url) + \
+        '","alt_text":"Image"}},{"type":"divider"},{"type": "context","elements": [{"type": "mrkdwn", "text": "#' + str(message_channel_name) + '  ' + str(
+        message_send_date) + '"}]}]'
     return block
 
 
-def disable_app(msgch):
-    pass
+# def disable_app(msgch):
+#     pass
+
+def get_user_info(client, user_id):
+    user_name = client.users_info(token=slack_token,user=user_id)['user']['profile']['display_name']
+    return user_name
+
+def get_user_icon(client, user_id):
+    icon_url = web_client.users_info(token=slack_token, user=user_id)['user']['profile']['image_512']
+    return icon_url
+
+def get_channel_info(client, channel_id):
+    # channels = client.channels_list(token=slack_token)
+    channel_info = client.conversations_info(token=slack_token, channel=channel_id)
+    if channel_info['ok']:
+        return channel_info['channel']
+    else:
+        return None
 
 @RTMClient.run_on(event="message")
 def get_msg(**payload):
     try:
-        ch, chinfo = get_chlist()
-        data = payload['data']
+        received_data = payload['data']
         web_client = payload['web_client']
-        msgch = data['channel']
-        if 'user' in data and 'thread_ts' not in data:
-            user = data['user']
-            text = data['text']
-            text = re.sub(mention_pattern, '', text)
-            if chinfo[msgch] == user and msgch in ch and len(text):
-                if disp.match(text):
-                    disable_app(msgch)
-                else:
-                    username = web_client.users_info(
-                        token=slack_token,
-                        user=user)['user']['profile']['display_name']
-                    iconurl = web_client.users_info(
-                        token=slack_token,
-                        user=user)['user']['profile']['image_512']
-                    msgchname = web_client.channels_info(token=slack_token, channel=msgch)['channel']['name']
-                    msgdate = datetime.date.fromtimestamp(int(float(data['ts'])))
-                    block = build_message(
-                        username, text, iconurl, msgchname, msgdate)
+        msgch = received_data['channel']
+        channel_info = get_channel_info(web_client, msgch)
+        if channel_info:
+            send_data={}
+            user_id = received_data['user']
+            if channel_info['creator'] == user_id and 'times' in channel_info['name'] and not 'times_all_tl' in channel_info:
+                send_data['text'] = re.sub(mention_pattern, '', received_data['text'])
+                if send_data['text']:
+                    print(send_data['text'])
+                    send_data['user_name'] = get_user_info(web_client, user_id)
+                    send_data['icon_url'] = get_user_icon(web_client, user_id)
+                    send_data['message_channel_name'] = channel_info['name']
+                    send_data['message_send_date'] = datetime.date.fromtimestamp(int(float(received_data['ts'])))
+                    block = build_message(send_data)                
+                    print(block)
                     web_client.chat_postMessage(
                         token=slack_token,
                         channel="#times_all_tl",
@@ -70,37 +73,5 @@ def get_msg(**payload):
                     )
     except Exception as e:
         print(e)
-
-def channel_list(client):
-    channels = client.channels_list(token=slack_token)
-    print(channels)
-    if channels['ok']:
-        return channels['channels']
-    else:
-        return None
-
-
-@RTMClient.run_on(event="channel_joined")
-def app_invited(**payload):
-    chlist = []
-    ret = channel_list(web_client)
-    for i in ret:
-        if i['name'].find("times_all_tl") is not -1:
-            tlch = i
-        elif i['name'].find("times") is not -1:
-            chlist.append(i)
-    with open(current_dir + '/channel.csv', 'w') as f:
-        writer = csv.DictWriter(f, ['id', 'name', 'is_channel', 'created', 'creator', "is_archived", "is_general", "name_normalized", "is_shared",
-        "is_org_shared", "is_member", "is_private", "is_mpim", "members", "topic", "purpose", "previous_names", "num_members", "unlinked",
-        "pending_connected_team_ids", "is_ext_shared", "is_group", "pending_shared", "is_pending_ext_shared", "shared_team_ids", "parent_conversation", "is_im"])
-        writer.writeheader()
-        for i in chlist:
-            writer.writerow(i)
-    with open(current_dir + '/tl.csv', 'w') as f:
-        writer = csv.DictWriter(f, ['id', 'name', 'is_channel', 'created', 'creator', "is_archived", "is_general", "name_normalized", "is_shared",
-        "is_org_shared", "is_member", "is_private", "is_mpim", "members", "topic", "purpose", "previous_names", "num_members", "unlinked",
-        "pending_connected_team_ids", "is_ext_shared", "is_group", "pending_shared", "is_pending_ext_shared", "shared_team_ids", "parent_conversation", "is_im"])
-        writer.writeheader()
-        writer.writerow(tlch)
 
 rtm_client.start()

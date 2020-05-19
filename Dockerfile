@@ -3,4 +3,4 @@ RUN mkdir src
 COPY src src/
 WORKDIR ./src/
 RUN python -m pip install slackclient slackeventsapi
-CMD [ "python", "Start.py" ]
+CMD [ "python", "gen_timeline.py" ]
