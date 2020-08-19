@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ssh
-        uses: garygrossgarten/github-action-ssh@v0.3.0
+        uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.HOST_NAME }}
           username: ${{ secrets.HOST_USER }}
           privateKey: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.HOST_PORT }}
           command: cd ${{ secrets.dir }} && git pull origin master && 
-                   docker build -t t2t:1.5 . --force-rm=true --no-cache && 
+                   docker build -t t2t:1.6 . --force-rm=true --no-cache && 
                    docker ps -a | grep 't2t'| awk 'END{if(NR>=1){print $1}}' | xargs -r docker rm -f 
-                   && docker run -d -it --env  SlackBtoken=${{ secrets.Bot_Token }} --name t2t t2t:1.5
+                   && docker run -d -it --restart=always --env  SlackBtoken=${{ secrets.Bot_Token }} --name t2t t2t:1.6
